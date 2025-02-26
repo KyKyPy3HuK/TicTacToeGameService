@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 public class Move {
 
     @Id
+    @GeneratedValue
     @Column(name = "id")
     private Long id;
 

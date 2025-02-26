@@ -56,7 +56,7 @@ public class GameService {
     }
 
     @Transactional
-    public User addNewUser(){
+    public User getNewUser(){
         User newUser = new User();
         userRepository.save(newUser);
         return newUser;

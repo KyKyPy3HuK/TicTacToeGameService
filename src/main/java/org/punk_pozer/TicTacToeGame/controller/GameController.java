@@ -1,6 +1,7 @@
 package org.punk_pozer.TicTacToeGame.controller;
 
 import jakarta.servlet.http.HttpSession;
+import org.punk_pozer.TicTacToeGame.model.User;
 import org.punk_pozer.TicTacToeGame.service.GameService;
 import org.punk_pozer.TicTacToeGame.util.IllegalMoveException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +43,8 @@ public class GameController {
     @GetMapping("")
     public ResponseEntity<?> getActualGameByUser(HttpSession session){
         //Проверить, существует ли пользователь в системе
-        if (session.getAttribute("userId") != null){
+        Long userId = (Long)session.getAttribute("userId");
+        if (userId != null){
 
         }
 
@@ -67,13 +69,7 @@ public class GameController {
     @GetMapping("/check")
     public ResponseEntity<String> checkSession(HttpSession session){
 
-        String message;
-
-        if (session.getAttribute("boardId") == null){
-            session.setAttribute("boardId", board_counter++);
-        }
-
-        message = ((Integer)session.getAttribute("boardId")).toString();
+        String message = mapUserIdBySession(session).toString();
 
         return new ResponseEntity<String>(message, HttpStatus.OK);
     }
@@ -82,4 +78,25 @@ public class GameController {
     private ResponseEntity<String> handelException(IllegalMoveException e){
         return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
+
+
+    /**
+     *
+     * @param session
+     * @return
+     */
+    private Long mapUserIdBySession(HttpSession session){
+        //Получаем информацию из сессии
+        Long userId = (Long) session.getAttribute("userId");
+
+        //Если информации нет - создаем нового пользователя, и добавляем атрибут
+        if (userId == null){
+            User newUser = gameService.getNewUser();
+            userId = newUser.getId();
+            session.setAttribute("userId", userId);
+        }
+
+        return userId;
+    }
+
 }

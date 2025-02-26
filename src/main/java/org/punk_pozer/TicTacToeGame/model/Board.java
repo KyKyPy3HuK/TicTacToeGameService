@@ -16,6 +16,7 @@ import java.util.List;
 public class Board {
 
     @Id
+    @GeneratedValue
     @Column(name = "id")
     private Long id;
 
