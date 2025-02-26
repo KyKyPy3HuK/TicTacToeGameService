@@ -2,9 +2,11 @@ package org.punk_pozer.TicTacToeGame.controller;
 
 import jakarta.servlet.http.HttpSession;
 import org.punk_pozer.TicTacToeGame.service.GameService;
+import org.punk_pozer.TicTacToeGame.util.IllegalMoveException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,11 +36,16 @@ public class GameController {
     }
 
     /**
-     *
+     * Возврат текущей доски пользователя
      * @return
      */
     @GetMapping("")
-    public ResponseEntity<?> getGameById(){
+    public ResponseEntity<?> getActualGameByUser(HttpSession session){
+        //Проверить, существует ли пользователь в системе
+        if (session.getAttribute("userId") != null){
+
+        }
+
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -64,16 +71,15 @@ public class GameController {
 
         if (session.getAttribute("boardId") == null){
             session.setAttribute("boardId", board_counter++);
-
-        }
-        else{
-
         }
 
         message = ((Integer)session.getAttribute("boardId")).toString();
 
-
         return new ResponseEntity<String>(message, HttpStatus.OK);
     }
 
+    @ExceptionHandler
+    private ResponseEntity<String> handelException(IllegalMoveException e){
+        return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
 }

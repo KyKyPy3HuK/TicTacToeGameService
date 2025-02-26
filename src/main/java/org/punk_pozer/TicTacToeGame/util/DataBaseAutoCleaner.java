@@ -1,7 +1,7 @@
 package org.punk_pozer.TicTacToeGame.util;
 
 
-import org.punk_pozer.TicTacToeGame.repository.GameRepository;
+import org.punk_pozer.TicTacToeGame.repository.BoardRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -12,10 +12,8 @@ import org.springframework.stereotype.Component;
 @EnableAsync
 public class DataBaseAutoCleaner {
 
-
-
     @Autowired
-    public DataBaseAutoCleaner(GameRepository gameRepository){
+    public DataBaseAutoCleaner(BoardRepository boardRepository){
         System.out.println("DBAC start");
     }
 

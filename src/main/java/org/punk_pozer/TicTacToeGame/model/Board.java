@@ -2,15 +2,15 @@ package org.punk_pozer.TicTacToeGame.model;
 
 import jakarta.persistence.*;
 import org.punk_pozer.TicTacToeGame.util.MatrixEnumConverter;
-import org.springframework.context.annotation.EnableMBeanExport;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "boards", indexes = {
+@Table(
+        name = "boards",
+        indexes = {
         @Index(name = "idx_id", columnList = "id")
 })
 public class Board {
@@ -19,36 +19,32 @@ public class Board {
     @Column(name = "id")
     private Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    @Column(name = "user_id")
-    private Long userId;
-
-    @Column(name = "state")
-    @Convert(converter = MatrixEnumConverter.class)
-    private CellState[][] state;
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private GameStatus status;
 
     @Column(name = "is_player_first")
-    boolean isPlayerFirst;
+    boolean isUserFirst;
 
     @Column
     private LocalDateTime lastMoveTime;
 
-    @OneToMany(mappedBy = "id", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Move> moves;
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Move> moves = new ArrayList<>();
 
     public Board() {
     }
 
-    public Board(Long id, Long userId,CellState[][] state, GameStatus status, boolean isPlayerFirst, LocalDateTime lastMoveTime) {
+    public Board(Long id, User user, GameStatus status, boolean isUserFirst, LocalDateTime lastMoveTime) {
         this.id = id;
-        this.userId = userId;
-        this.state = state;
+        this.user = user;
         this.status = status;
-        this.isPlayerFirst = isPlayerFirst;
+        this.isUserFirst = isUserFirst;
         this.lastMoveTime = lastMoveTime;
     }
 
@@ -60,12 +56,12 @@ public class Board {
         this.moves = moves;
     }
 
-    public Long getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public Long getId() {
@@ -76,14 +72,6 @@ public class Board {
         this.id = id;
     }
 
-    public CellState[][] getState() {
-        return state;
-    }
-
-    public void setState(CellState[][] state) {
-        this.state = state;
-    }
-
     public GameStatus getStatus() {
         return status;
     }
@@ -92,12 +80,12 @@ public class Board {
         this.status = status;
     }
 
-    public boolean isPlayerFirst() {
-        return isPlayerFirst;
+    public boolean isUserFirst() {
+        return isUserFirst;
     }
 
-    public void setPlayerFirst(boolean playerFirst) {
-        isPlayerFirst = playerFirst;
+    public void setUserFirst(boolean userFirst) {
+        isUserFirst = userFirst;
     }
 
     public LocalDateTime getLastMoveTime() {
