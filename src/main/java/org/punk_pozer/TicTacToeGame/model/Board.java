@@ -15,15 +15,14 @@ import java.util.List;
 })
 public class Board {
 
+    public static final char ZERO = 'O';
+    public static final char FREE = ' ';
+    public static final char CROSS = 'X';
+
     @Id
     @GeneratedValue
     @Column(name = "id")
     private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
@@ -32,18 +31,17 @@ public class Board {
     @Column(name = "is_player_first")
     boolean isUserFirst;
 
-    @Column
+    @Column(name = "lastMoveTime",columnDefinition = "timestamp(7)")
     private LocalDateTime lastMoveTime;
 
-    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Move> moves = new ArrayList<>();
 
     public Board() {
     }
 
-    public Board(Long id, User user, GameStatus status, boolean isUserFirst, LocalDateTime lastMoveTime) {
+    public Board(Long id, GameStatus status, boolean isUserFirst, LocalDateTime lastMoveTime) {
         this.id = id;
-        this.user = user;
         this.status = status;
         this.isUserFirst = isUserFirst;
         this.lastMoveTime = lastMoveTime;
@@ -55,14 +53,6 @@ public class Board {
 
     public void setMoves(List<Move> moves) {
         this.moves = moves;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
     }
 
     public Long getId() {
@@ -95,5 +85,39 @@ public class Board {
 
     public void setLastMoveTime(LocalDateTime lastMoveTime) {
         this.lastMoveTime = lastMoveTime;
+    }
+
+    public char[][] getState(){
+        char[][] boardMatrix = new char[][] {{FREE,FREE,FREE},{FREE,FREE,FREE},{FREE,FREE,FREE}};
+
+        char playerMark;
+        char computerMark;
+        if (this.isUserFirst()){
+            playerMark = CROSS;
+            computerMark = ZERO;
+        }
+        else{
+            playerMark = ZERO;
+            computerMark = CROSS;
+        };
+        // Выставление ходов на доску
+        int x = 0;
+        int y = 0;
+        int pos = 0;
+        for (Move move : this.moves){
+            //Расчет позиции
+            pos = move.getPosition();
+            x = pos % 3;
+            y = pos / 3;
+
+            if (move.isPlayerMove()){
+                boardMatrix[y][x] = playerMark;
+            }
+            else{
+                boardMatrix[y][x] = computerMark;
+            }
+        }
+
+        return boardMatrix;
     }
 }

@@ -12,7 +12,4 @@ import java.util.Optional;
 public interface BoardRepository extends JpaRepository<Board, Long> {
     @Transactional
     Optional<Board> getBoardById(Long id);
-
-    @Transactional
-    List<Board> getBoardsByUserId(Long userId);
 }

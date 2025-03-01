@@ -1,22 +1,23 @@
 package org.punk_pozer.TicTacToeGame.controller;
 
 import jakarta.servlet.http.HttpSession;
-import org.punk_pozer.TicTacToeGame.model.User;
+import org.punk_pozer.TicTacToeGame.dto.BoardDTO;
+import org.punk_pozer.TicTacToeGame.exception.BoardNotFoundException;
+import org.punk_pozer.TicTacToeGame.model.Board;
 import org.punk_pozer.TicTacToeGame.service.GameService;
-import org.punk_pozer.TicTacToeGame.util.IllegalMoveException;
+import org.punk_pozer.TicTacToeGame.exception.IllegalMoveException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/game")
 public class GameController {
 
-    private static int board_counter = 0;
+    private static final String BOARD_ID_SESS_ATR = "boardId";
 
     private final GameService gameService;
 
@@ -31,9 +32,25 @@ public class GameController {
      * @return OK
      */
     @GetMapping("/new")
-    public ResponseEntity<?> startNewGame(){
+    public ResponseEntity<?> newBoard(
+            @RequestParam(name = "first", required = false ,defaultValue = "true") boolean isPlayerFirst, HttpSession session){
 
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        Board newBoard;
+        Long oldBoardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);
+
+        //Смена статуса предыдущей доски на "ENDED" если она существует
+        if (oldBoardId != null){
+            Optional<Board> oldBoard = gameService.getBoardById(oldBoardId);
+            if (oldBoard.isPresent()){
+                gameService.finalizeBoard(oldBoard.get());
+            }
+        }
+        //Создание новой доски
+        newBoard = gameService.getNewBoard(isPlayerFirst);
+        Long newBoardId = newBoard.getId();
+        session.setAttribute(BOARD_ID_SESS_ATR, newBoardId);
+        BoardDTO dto = new BoardDTO(newBoard);
+        return new ResponseEntity<BoardDTO>(dto, HttpStatus.CREATED);
     }
 
     /**
@@ -41,14 +58,21 @@ public class GameController {
      * @return
      */
     @GetMapping("")
-    public ResponseEntity<?> getActualGameByUser(HttpSession session){
-        //Проверить, существует ли пользователь в системе
-        Long userId = (Long)session.getAttribute("userId");
-        if (userId != null){
+    public ResponseEntity<?> getBoard(HttpSession session){
+        Long boardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);
 
+        //Проверка наличия идентификатора доски в сессии
+        if (boardId != null){
+            Optional<Board> board = gameService.getBoardById(boardId);
+            //Проверка наличия доски по данному идентификатору
+            if (board.isPresent()){
+                //Успех
+                BoardDTO dto = new BoardDTO(board.get());
+                return new ResponseEntity<BoardDTO>(dto, HttpStatus.OK);
+            }
         }
-
-        return new ResponseEntity<>(HttpStatus.OK);
+        //Ошибка
+        throw new BoardNotFoundException();
     }
 
     /**
@@ -56,47 +80,41 @@ public class GameController {
      * @return
      */
     @GetMapping("/move")
-    public ResponseEntity<?> moveInGameById(HttpSession session){
-        return new ResponseEntity<>(HttpStatus.OK);
+    public ResponseEntity<?> makeMove(
+            @RequestParam(name = "pos", required = true) int pos,
+            HttpSession session){
+        //Проверка на наличие данных в сессии
+        Long boardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);
+        if (boardId == null){
+            throw new BoardNotFoundException();
+        }
+
+        //Проверка на наличие доски по данным сессии
+        Optional<Board> boardOptional = gameService.getBoardById(boardId);
+        if (boardOptional.isEmpty()){
+            throw new BoardNotFoundException();
+        }
+
+        //Ход
+        BoardDTO boardDto = new BoardDTO(gameService.makeMove(boardOptional.get(), pos));
+
+        return new ResponseEntity<BoardDTO>(boardDto,HttpStatus.CREATED);
     }
 
     //Отменить ход
-    @GetMapping("/redo")
-    public ResponseEntity<?> redoInGameById(){
+    @GetMapping("/undo")
+    public ResponseEntity<?> redoMove(){
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @GetMapping("/check")
-    public ResponseEntity<String> checkSession(HttpSession session){
-
-        String message = mapUserIdBySession(session).toString();
-
-        return new ResponseEntity<String>(message, HttpStatus.OK);
+    @ExceptionHandler
+    private ResponseEntity<String> handleIllegalMoveException(IllegalMoveException e){
+        return new ResponseEntity<String>(e.getMessage(), HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler
-    private ResponseEntity<String> handelException(IllegalMoveException e){
-        return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
-    }
-
-
-    /**
-     *
-     * @param session
-     * @return
-     */
-    private Long mapUserIdBySession(HttpSession session){
-        //Получаем информацию из сессии
-        Long userId = (Long) session.getAttribute("userId");
-
-        //Если информации нет - создаем нового пользователя, и добавляем атрибут
-        if (userId == null){
-            User newUser = gameService.getNewUser();
-            userId = newUser.getId();
-            session.setAttribute("userId", userId);
-        }
-
-        return userId;
+    private ResponseEntity<String> handleBoardNotFoundException(BoardNotFoundException e){
+        return new ResponseEntity<String>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
 
 }
