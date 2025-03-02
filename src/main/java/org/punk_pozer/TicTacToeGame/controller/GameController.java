@@ -16,6 +16,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/game")
+@CrossOrigin(origins = "*") // Разрешить запросы с любого источника
 public class GameController {
     /**
      * Имя параметра сессии в котором хранится идентификатор доски
@@ -118,7 +119,7 @@ public class GameController {
      * @throws BoardNotFoundException 404:NOT FOUND - пользователь не имеет доски
      */
     @GetMapping("/undo")
-    public ResponseEntity<?> redoMove(HttpSession session) throws IllegalMoveUndoException, BoardNotFoundException {
+    public ResponseEntity<?> undoMove(HttpSession session) throws IllegalMoveUndoException, BoardNotFoundException {
         //Проверка на наличие данных о доске в сессии
         Long boardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);
         if (boardId == null){
