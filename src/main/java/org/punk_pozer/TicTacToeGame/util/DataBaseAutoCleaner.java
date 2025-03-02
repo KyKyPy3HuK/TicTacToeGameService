@@ -22,10 +22,9 @@ public class DataBaseAutoCleaner {
     }
 
     @Async
-    //@Scheduled(cron = "${util.autocleaner.cron}")
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(cron = "${util.autocleaner.cron}")
     public void deleteUnusedBoards(){
-        int deletedCount = boardRepository.deleteOldBoards(LocalDateTime.now().minusMinutes(1));
+        int deletedCount = boardRepository.deleteOldBoards(LocalDateTime.now().minusDays(1));
         System.out.println("Clean garbage, deleted " + deletedCount + " rows");
     }
 }

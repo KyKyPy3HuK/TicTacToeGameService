@@ -3,6 +3,7 @@ package org.punk_pozer.TicTacToeGame.controller;
 import jakarta.servlet.http.HttpSession;
 import org.punk_pozer.TicTacToeGame.dto.BoardDTO;
 import org.punk_pozer.TicTacToeGame.exception.BoardNotFoundException;
+import org.punk_pozer.TicTacToeGame.exception.IllegalMoveUndoException;
 import org.punk_pozer.TicTacToeGame.model.Board;
 import org.punk_pozer.TicTacToeGame.service.GameService;
 import org.punk_pozer.TicTacToeGame.exception.IllegalMoveException;
@@ -24,7 +25,6 @@ public class GameController {
     @Autowired
     public GameController(GameService gameService){
         this.gameService = gameService;
-        System.out.println("GameController start");
     }
 
     /**
@@ -103,18 +103,37 @@ public class GameController {
 
     //Отменить ход
     @GetMapping("/undo")
-    public ResponseEntity<?> redoMove(){
-        return new ResponseEntity<>(HttpStatus.OK);
+    public ResponseEntity<?> redoMove(HttpSession session) throws IllegalMoveUndoException {
+        //Проверка на наличие данных о доске в сессии
+        Long boardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);
+        if (boardId == null){
+            throw new BoardNotFoundException();
+        }
+
+        //Проверка на наличие доски по данным сессии
+        Optional<Board> boardOptional = gameService.getBoardById(boardId);
+        if (boardOptional.isEmpty()){
+            throw new BoardNotFoundException();
+        }
+
+        BoardDTO boardDTO = new BoardDTO(gameService.undoMove(boardOptional.get()));
+
+        return new ResponseEntity<BoardDTO>(boardDTO, HttpStatus.OK);
     }
 
     @ExceptionHandler
-    private ResponseEntity<String> handleIllegalMoveException(IllegalMoveException e){
-        return new ResponseEntity<String>(e.getMessage(), HttpStatus.FORBIDDEN);
+    private ResponseEntity<String> illegalMoveExceptionHandler(IllegalMoveException e){
+        return new ResponseEntity<String>("Error 403 - Forbidden: " + e.getMessage(), HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler
-    private ResponseEntity<String> handleBoardNotFoundException(BoardNotFoundException e){
-        return new ResponseEntity<String>(e.getMessage(), HttpStatus.NOT_FOUND);
+    private ResponseEntity<String> boardNotFoundExceptionHandler(BoardNotFoundException e){
+        return new ResponseEntity<String>("Error 404 - Not found: " + e.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler
+    private ResponseEntity<String> illegalMoveUndoExceptionHandler(IllegalMoveUndoException e){
+        return new ResponseEntity<String>("Error 403 - Forbidden: " + e.getMessage(), HttpStatus.FORBIDDEN);
     }
 
 }

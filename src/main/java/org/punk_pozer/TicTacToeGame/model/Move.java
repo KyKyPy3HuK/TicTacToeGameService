@@ -17,7 +17,7 @@ public class Move {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne()
     @JoinColumn(name = "board_id")
     private Board board;
 

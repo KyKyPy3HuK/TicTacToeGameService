@@ -1,6 +1,7 @@
 package org.punk_pozer.TicTacToeGame.service;
 
 import org.punk_pozer.TicTacToeGame.exception.IllegalMoveException;
+import org.punk_pozer.TicTacToeGame.exception.IllegalMoveUndoException;
 import org.punk_pozer.TicTacToeGame.model.Board;
 import org.punk_pozer.TicTacToeGame.model.GameStatus;
 import org.punk_pozer.TicTacToeGame.model.Move;
@@ -8,11 +9,12 @@ import org.punk_pozer.TicTacToeGame.repository.BoardRepository;
 import org.punk_pozer.TicTacToeGame.repository.MoveRepository;
 import org.punk_pozer.TicTacToeGame.util.ComputerAi;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -29,7 +31,6 @@ public class GameService {
     public GameService(BoardRepository boardRepository,
                        MoveRepository moveRepository){
         this.boardRepository = boardRepository;
-        System.out.println("GameService start");
         this.moveRepository = moveRepository;
     }
 
@@ -144,8 +145,52 @@ public class GameService {
     }
 
 
-    public HttpStatus undoMove(int boardId){
-        return HttpStatus.NOT_IMPLEMENTED;
+    /**
+     * Отмена последнего хода игрока и последнего хода компьютера
+     * @param board доска, ходы на которой будут отменяться
+     * @return
+     */
+    public Board undoMove(Board board) throws IllegalMoveUndoException {
+
+        if (!(board.getStatus() == GameStatus.STARTED)){
+            throw new IllegalMoveUndoException("Board status = "
+                    + board.getStatus().toString()
+                    + " not equal to \""
+                    + GameStatus.STARTED.toString()+"\"" +
+                    " to undo a move, use  /api/game/new  to create a new board");
+        }
+
+        int movesCount = board.getMoves().size();
+        if (movesCount < 1){
+            throw new IllegalMoveUndoException("No moves on the board to undo");
+        }
+
+        //Если кол-во ходов = 1, то партия началась с хода машины, а игрок еще не делал ход
+        //Необходимо удалить ход машины, затем машина сделает ход заново
+        if (movesCount == 1){
+            //Удаляем единственный ход
+            board.getMoves().remove(0);
+            //Добавляем обратно другой первый ход машины
+            int compMovePos = ComputerAi.getRandMovePos(board.getState(),board.isUserFirst());
+            Move compMove = new Move();
+            compMove.setPlayerMove(false);
+            compMove.setBoard(board);
+            compMove.setNumber(0);
+            compMove.setPosition(compMovePos);
+            board.getMoves().add(compMove);
+        }
+        //Если кол-во ходов >= 2, то удаляем 2 последних хода: последний ход машины и игрока
+        else{
+
+            List<Move> removeList =  board.getMoves().stream().sorted(Comparator.comparingInt(Move::getNumber).reversed()).limit(2).toList();
+            for (int i = 0; i < 2; i++) {
+                board.getMoves().remove(removeList.get(i));
+            }
+        }
+
+        boardRepository.save(board);
+
+        return board;
     }
 
     /**
