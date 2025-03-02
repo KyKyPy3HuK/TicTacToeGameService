@@ -63,7 +63,7 @@ public class GameService {
 
         //Первый ход компьютера
         if (!isPlayerFirst){
-            int compMovePos = ComputerAi.getRandMovePos(newBoard.getState(),isPlayerFirst);
+            int compMovePos = ComputerAi.getMovePos(newBoard.getState(),isPlayerFirst);
             Move compMove = new Move();
             compMove.setPlayerMove(false);
             compMove.setBoard(newBoard);
@@ -121,7 +121,7 @@ public class GameService {
         //Ход машины
         else {
             //Выбор позиции хода
-            int compMovePos = ComputerAi.getRandMovePos(board.getState(), board.isUserFirst());
+            int compMovePos = ComputerAi.getMovePos(board.getState(), board.isUserFirst());
             Move compMove = new Move();
             compMove.setBoard(board);
             compMove.setNumber(board.getMoves().size());
