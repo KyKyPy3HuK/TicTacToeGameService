@@ -8,18 +8,24 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 @Component
 @EnableAsync
 public class DataBaseAutoCleaner {
 
+    private  final BoardRepository boardRepository;
+
     @Autowired
     public DataBaseAutoCleaner(BoardRepository boardRepository){
-        System.out.println("DBAC start");
+        this.boardRepository = boardRepository;
     }
 
     @Async
-    @Scheduled(cron = "${util.autocleaner.cron}")
+    //@Scheduled(cron = "${util.autocleaner.cron}")
+    @Scheduled(fixedRate = 60000)
     public void deleteUnusedBoards(){
-        System.out.println("Clean garbage...");
+        int deletedCount = boardRepository.deleteOldBoards(LocalDateTime.now().minusMinutes(1));
+        System.out.println("Clean garbage, deleted " + deletedCount + " rows");
     }
 }

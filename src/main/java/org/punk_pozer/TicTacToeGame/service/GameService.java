@@ -104,6 +104,8 @@ public class GameService {
             move.setPosition(position);
             move.setPlayerMove(true) ;
             board.getMoves().add(move);
+            //Обновление времени последнего хода
+            board.setLastMoveTime(LocalDateTime.now());
         };
 
         //Проверка на выйгрыш человека

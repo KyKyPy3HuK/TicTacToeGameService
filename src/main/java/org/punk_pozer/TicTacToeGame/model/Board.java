@@ -11,7 +11,7 @@ import java.util.List;
 @Table(
         name = "boards",
         indexes = {
-        @Index(name = "idx_id", columnList = "id")
+        @Index(name = "idx_boards_id", columnList = "id")
 })
 public class Board {
 
@@ -31,10 +31,10 @@ public class Board {
     @Column(name = "is_player_first")
     boolean isUserFirst;
 
-    @Column(name = "lastMoveTime",columnDefinition = "timestamp(7)")
+    @Column(name = "last_move_time",columnDefinition = "timestamp(7)")
     private LocalDateTime lastMoveTime;
 
-    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<Move> moves = new ArrayList<>();
 
     public Board() {

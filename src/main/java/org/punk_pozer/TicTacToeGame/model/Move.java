@@ -2,8 +2,14 @@ package org.punk_pozer.TicTacToeGame.model;
 
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Cascade;
 
 @Entity
+@Table(
+        name = "moves",
+        indexes = {
+                @Index(name = "idx_moves_board_id", columnList = "board_id")
+        })
 public class Move {
 
     @Id
@@ -11,7 +17,7 @@ public class Move {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne()
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "board_id")
     private Board board;
 
