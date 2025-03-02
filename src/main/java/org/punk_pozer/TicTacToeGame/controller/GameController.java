@@ -2,6 +2,8 @@ package org.punk_pozer.TicTacToeGame.controller;
 
 import jakarta.servlet.http.HttpSession;
 import org.punk_pozer.TicTacToeGame.dto.BoardDTO;
+import org.punk_pozer.TicTacToeGame.dto.MoveRequest;
+import org.punk_pozer.TicTacToeGame.dto.NewBoardRequest;
 import org.punk_pozer.TicTacToeGame.exception.BoardNotFoundException;
 import org.punk_pozer.TicTacToeGame.exception.IllegalMoveUndoException;
 import org.punk_pozer.TicTacToeGame.model.Board;
@@ -16,7 +18,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/game")
-@CrossOrigin(origins = "*") // Разрешить запросы с любого источника
 public class GameController {
     /**
      * Имя параметра сессии в котором хранится идентификатор доски
@@ -34,11 +35,15 @@ public class GameController {
      * Создает и возвращает новую доску, если была старая то присваивает ей статус досрочного завершения "FINISHED"
      * @return новаая доска и статус 201 CREATED
      */
-    @GetMapping("/new")
+    @PostMapping("/new")
     public ResponseEntity<?> newBoard(
-            @RequestParam(name = "first", required = false ,defaultValue = "true") boolean isPlayerFirst, HttpSession session){
+            @RequestBody(required = false) NewBoardRequest request,
+            HttpSession session
+    ){
+        boolean isPlayerFirst = request != null ? request.getIsPlayerFirst() : true;
 
         Board newBoard;
+
         Long oldBoardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);
 
         //Смена статуса предыдущей доски на "ENDED" если она существует
@@ -89,10 +94,12 @@ public class GameController {
      * @throws IllegalMoveException 403:FORBIDDEN - pos хода некорректный
      * @throws BoardNotFoundException 404:NOT FOUND - пользователь не имеет доски
      */
-    @GetMapping("/move")
+    @PostMapping("/move")
     public ResponseEntity<?> makeMove(
-            @RequestParam(name = "pos", required = true) int pos,
+            @RequestBody(required = true) MoveRequest moveRequest,
             HttpSession session) throws IllegalMoveException, BoardNotFoundException{
+
+        int pos = moveRequest.getPos();
         //Проверка на наличие данных в сессии
         Long boardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);
         if (boardId == null){
@@ -118,7 +125,7 @@ public class GameController {
      * @throws IllegalMoveUndoException 403:FORBIDDEN - в данном состоянии доски ход/ходы нельзя отменить
      * @throws BoardNotFoundException 404:NOT FOUND - пользователь не имеет доски
      */
-    @GetMapping("/undo")
+    @PostMapping("/undo")
     public ResponseEntity<?> undoMove(HttpSession session) throws IllegalMoveUndoException, BoardNotFoundException {
         //Проверка на наличие данных о доске в сессии
         Long boardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);

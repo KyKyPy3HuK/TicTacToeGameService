@@ -1,23 +1,27 @@
 openapi: 3.0.0
 info:
-  title: Game API
-  description: API для управления игровой доской
+  title: TicTacToeGame API
+  description: API для игры в крестики нолики с машиной
   version: 1.0.0
 servers:
   - url: http://localhost:8080/api
+    description: Local server
 paths:
   /game/new:
-    get:
+    post:
       summary: Создает новую доску
-      description: Создает и возвращает новую доску, если была старая, то присваивает ей статус досрочного завершения "FINISHED"
-      parameters:
-        - name: first
-          in: query
-          description: Определяет, ходит ли игрок первым
-          required: false
-          schema:
-            type: boolean
-            default: true
+      description: Создает и возвращает новую доску. Если игрок имеет активную доску то ей присваивается статус "FINISHED".
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isPlayerFirst:
+                  type: boolean
+                  description: Определяет, ходит ли игрок первым (крестиками) (по умолчанию true)
+                  example: true
       responses:
         '201':
           description: Новая доска успешно создана
@@ -28,10 +32,10 @@ paths:
   /game:
     get:
       summary: Возвращает текущую доску пользователя
-      description: Возвращает текущую доску пользователя, если она существует
+      description: Возвращает текущую доску пользователя, если она существует.
       responses:
         '200':
-          description: Доска успешно возвращена
+          description: Успех
           content:
             application/json:
               schema:
@@ -44,20 +48,25 @@ paths:
                 type: string
                 example: "Error 404 - Not found: Board not found"
   /game/move:
-    get:
+    post:
       summary: Сделать ход на доске
-      description: Сделать ход на доске по указанной позиции
-      parameters:
-        - name: pos
-          in: query
-          description: Позиция для хода, значения от 0 до 8
-          required: true
-          schema:
-            type: integer
-            format: int32
+      description: Выполняет ход на доске по указанной позиции. Возвращает доску с ходом игрока и ответным ходом машины
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pos:
+                  type: integer
+                  description: Позиция для хода (от 0 до 8)
+                  example: 5
+              required:
+                - pos
       responses:
         '201':
-          description: Ход успешно сделан
+          description: Успех, возврат доски с ходом игрока и ответным ходом машины
           content:
             application/json:
               schema:
@@ -77,12 +86,12 @@ paths:
                 type: string
                 example: "Error 404 - Not found: Board not found"
   /game/undo:
-    get:
+    post:
       summary: Отменить последний ход
-      description: Отменяет последний ход игрока и последний ход машины, или только ход машины если игрок еще не ходил
+      description: Отменяет последний ход игрока и последний ход машины, или только ход машины, если игрок еще не ходил.
       responses:
         '200':
-          description: Ход успешно отменен
+          description: Ход успешно отменен. Возврат доски с отмененным ходом
           content:
             application/json:
               schema:
@@ -118,17 +127,19 @@ components:
             items:
               type: string
               maxLength: 1
-              description: Символ, представляющий состояние клетки (например, 'X', 'O' или пусто)
+              description: Символ, представляющий состояние клетки ('X', 'O' или ' ')
         status:
           type: string
           description: Статус игры
           enum:
-            - IN_PROGRESS
+            - STARTED
             - FINISHED
             - DRAW
+            - COMPUTER_WIN
+            - PLAYER_WIN
         isUserFirst:
           type: boolean
-          description: Определяет, ходит ли игрок первым
+          description: Определяет, ходит ли игрок первым (играет ли игрок за крестики)
         lastMoveTime:
           type: string
           format: date-time
