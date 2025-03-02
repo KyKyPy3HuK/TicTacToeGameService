@@ -21,6 +21,9 @@ public class DataBaseAutoCleaner {
         this.boardRepository = boardRepository;
     }
 
+    /**
+     * Автоматическое (запланированное) удаление старых досок с каскадным удалением связанных с ними ходов
+     */
     @Async
     @Scheduled(cron = "${util.autocleaner.cron}")
     public void deleteUnusedBoards(){

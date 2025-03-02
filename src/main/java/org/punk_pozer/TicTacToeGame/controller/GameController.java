@@ -17,7 +17,9 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/game")
 public class GameController {
-
+    /**
+     * Имя параметра сессии в котором хранится идентификатор доски
+     */
     private static final String BOARD_ID_SESS_ATR = "boardId";
 
     private final GameService gameService;
@@ -28,8 +30,8 @@ public class GameController {
     }
 
     /**
-     *
-     * @return OK
+     * Создает и возвращает новую доску, если была старая то присваивает ей статус досрочного завершения "FINISHED"
+     * @return новаая доска и статус 201 CREATED
      */
     @GetMapping("/new")
     public ResponseEntity<?> newBoard(
@@ -55,10 +57,12 @@ public class GameController {
 
     /**
      * Возврат текущей доски пользователя
-     * @return
+     * @param session сессия пользователя
+     * @return доска пользователя, если существует, иначе выбрасывает BoardNotFoundException
+     * @exception BoardNotFoundException 404:NOT FOUND - пользователь не имеет доски
      */
     @GetMapping("")
-    public ResponseEntity<?> getBoard(HttpSession session){
+    public ResponseEntity<?> getBoard(HttpSession session) throws BoardNotFoundException{
         Long boardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);
 
         //Проверка наличия идентификатора доски в сессии
@@ -76,13 +80,18 @@ public class GameController {
     }
 
     /**
-     *
-     * @return
+     * Сделать ход на доске
+     * @param pos позиция для хода, принимает значения от 0 до 8,
+     *           раcчитывается по формуле координат на доске: y * 3 + x
+     * @param session сессия пользователя
+     * @return доска с ходом игрока и ответным ходом машины и статус 201:CREATED
+     * @throws IllegalMoveException 403:FORBIDDEN - pos хода некорректный
+     * @throws BoardNotFoundException 404:NOT FOUND - пользователь не имеет доски
      */
     @GetMapping("/move")
     public ResponseEntity<?> makeMove(
             @RequestParam(name = "pos", required = true) int pos,
-            HttpSession session){
+            HttpSession session) throws IllegalMoveException, BoardNotFoundException{
         //Проверка на наличие данных в сессии
         Long boardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);
         if (boardId == null){
@@ -101,9 +110,15 @@ public class GameController {
         return new ResponseEntity<BoardDTO>(boardDto,HttpStatus.CREATED);
     }
 
-    //Отменить ход
+    /**
+     * Выполнить отмену последнего хода игрока и последнего хода машины, или только хода машины если игрок еще не ходил
+     * @param session сессия пользователя
+     * @return доску с отмененными ходом/ходами
+     * @throws IllegalMoveUndoException 403:FORBIDDEN - в данном состоянии доски ход/ходы нельзя отменить
+     * @throws BoardNotFoundException 404:NOT FOUND - пользователь не имеет доски
+     */
     @GetMapping("/undo")
-    public ResponseEntity<?> redoMove(HttpSession session) throws IllegalMoveUndoException {
+    public ResponseEntity<?> redoMove(HttpSession session) throws IllegalMoveUndoException, BoardNotFoundException {
         //Проверка на наличие данных о доске в сессии
         Long boardId = (Long)session.getAttribute(BOARD_ID_SESS_ATR);
         if (boardId == null){

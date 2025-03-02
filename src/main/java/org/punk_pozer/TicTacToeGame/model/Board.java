@@ -1,7 +1,6 @@
 package org.punk_pozer.TicTacToeGame.model;
 
 import jakarta.persistence.*;
-import org.punk_pozer.TicTacToeGame.util.MatrixEnumConverter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

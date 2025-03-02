@@ -6,6 +6,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
+/**
+ * Объект предоставляемый пользователю, который содержит нужную пользователю информацию,
+ * а также агрегированное по ходам текущее состояние доски
+ */
 @Component
 public class BoardDTO {
 

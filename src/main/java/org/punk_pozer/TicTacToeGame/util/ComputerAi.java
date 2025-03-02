@@ -10,22 +10,39 @@ public class ComputerAi {
 
     private static final Random random = new Random(LocalDateTime.now().getSecond());
 
+    /**
+     * Размер стороны квадратной доски
+     */
     private static final int SIZE = 3;
 
-    private static final char EMPTY = Board.FREE;
-
+    /**
+     * Env параметр, который определяет какая стратегия хода машины будет использована,
+     * если true - случайная, иначе - оптимальная
+     */
     @Value("${util.computer-ai.use-random-mode}")
     private static boolean randomMode;
 
+    /**
+     * Получить ход машины, если в параметрах random-mode = false, то ход будет оптимальным, иначе случайным
+     * @param boardState текущее состояние доски
+     * @param isPlayerFirst кто ходит первым, если true то игрок ходит первым за крестики
+     * @return позицию хода pos = 0..8
+     */
     public static int getMovePos(char[][] boardState, boolean isPlayerFirst){
         if (randomMode){
             return getRandMovePos( boardState, isPlayerFirst);
         }
         else {
-            return findBestMove(boardState,isPlayerFirst);
+            return getBestMovePos(boardState,isPlayerFirst);
         }
     }
 
+    /**
+     * Получить случайную доступную позицию хода на доске
+     * @param boardState текущее состояние доски
+     * @param isPlayerFirst определяет, кто ходит первым - игрок/машина
+     * @return случайное доступное на доске значение от 0 до 8
+     */
     public static int getRandMovePos(char[][] boardState, boolean isPlayerFirst){
         int x;
         int y;
@@ -37,19 +54,28 @@ public class ComputerAi {
         return y * 3 + x;
     }
 
-
-    // Минимакс с альфа-бета отсечением
-    private static int minimax(char[][] board, int depth, boolean isMaximizing, int alpha, int beta, char playerSymbol, char computerSymbol) {
+    /**
+     * Минимакс с альфа-бета отсечением, нужна для расчета оптимального хода машины
+     * @param boardState текущее состояние доски
+     * @param depth глубина
+     * @param isMaximizing
+     * @param alpha коэффициент
+     * @param beta коэффициент
+     * @param playerSymbol символ игрока
+     * @param computerSymbol символ компьютера
+     * @return оптимальную позицию хода на доске
+     */
+    private static int minimax(char[][] boardState, int depth, boolean isMaximizing, int alpha, int beta, char playerSymbol, char computerSymbol) {
         // Проверка на победу компьютера
-        if (isWin(board, computerSymbol)) {
+        if (isWin(boardState, computerSymbol)) {
             return 10 - depth;
         }
         // Проверка на победу игрока
-        if (isWin(board, playerSymbol)) {
+        if (isWin(boardState, playerSymbol)) {
             return depth - 10;
         }
         // Проверка на ничью
-        if (isDraw(board)) {
+        if (isDraw(boardState)) {
             return 0;
         }
 
@@ -57,10 +83,10 @@ public class ComputerAi {
             int maxEval = Integer.MIN_VALUE;
             for (int y = 0; y < SIZE; y++) {
                 for (int x = 0; x < SIZE; x++) {
-                    if (board[y][x] == EMPTY) {
-                        board[y][x] = computerSymbol;
-                        int eval = minimax(board, depth + 1, false, alpha, beta, playerSymbol, computerSymbol);
-                        board[y][x] = EMPTY;
+                    if (boardState[y][x] == Board.FREE) {
+                        boardState[y][x] = computerSymbol;
+                        int eval = minimax(boardState, depth + 1, false, alpha, beta, playerSymbol, computerSymbol);
+                        boardState[y][x] = Board.FREE;
                         maxEval = Math.max(maxEval, eval);
                         alpha = Math.max(alpha, eval);
                         if (beta <= alpha) {
@@ -74,10 +100,10 @@ public class ComputerAi {
             int minEval = Integer.MAX_VALUE;
             for (int y = 0; y < SIZE; y++) {
                 for (int x = 0; x < SIZE; x++) {
-                    if (board[y][x] == EMPTY) {
-                        board[y][x] = playerSymbol;
-                        int eval = minimax(board, depth + 1, true, alpha, beta, playerSymbol, computerSymbol);
-                        board[y][x] = EMPTY;
+                    if (boardState[y][x] == Board.FREE) {
+                        boardState[y][x] = playerSymbol;
+                        int eval = minimax(boardState, depth + 1, true, alpha, beta, playerSymbol, computerSymbol);
+                        boardState[y][x] = Board.FREE;
                         minEval = Math.min(minEval, eval);
                         beta = Math.min(beta, eval);
                         if (beta <= alpha) {
@@ -90,28 +116,33 @@ public class ComputerAi {
         }
     }
 
-    // Проверка на победу
-    private static boolean isWin(char[][] board, char symbol) {
+    /**
+     * Проверка на победу, нужна для поиска оптимального хода
+     * @param boardState текущее состояние доски
+     * @param symbol символ, который будет проверяться на победу
+     * @return true если субъект использующий symbol одержал победу, иначе false
+     */
+    private static boolean isWin(char[][] boardState, char symbol) {
         // Проверка строк и столбцов
         for (int i = 0; i < SIZE; i++) {
-            if ((board[i][0] == symbol && board[i][1] == symbol && board[i][2] == symbol) ||
-                    (board[0][i] == symbol && board[1][i] == symbol && board[2][i] == symbol)) {
+            if ((boardState[i][0] == symbol && boardState[i][1] == symbol && boardState[i][2] == symbol) ||
+                    (boardState[0][i] == symbol && boardState[1][i] == symbol && boardState[2][i] == symbol)) {
                 return true;
             }
         }
         // Проверка диагоналей
-        if ((board[0][0] == symbol && board[1][1] == symbol && board[2][2] == symbol) ||
-                (board[0][2] == symbol && board[1][1] == symbol && board[2][0] == symbol)) {
+        if ((boardState[0][0] == symbol && boardState[1][1] == symbol && boardState[2][2] == symbol) ||
+                (boardState[0][2] == symbol && boardState[1][1] == symbol && boardState[2][0] == symbol)) {
             return true;
         }
         return false;
     }
 
     // Проверка на ничью
-    private static boolean isDraw(char[][] board) {
+    private static boolean isDraw(char[][] boardState) {
         for (int y = 0; y < SIZE; y++) {
             for (int x = 0; x < SIZE; x++) {
-                if (board[y][x] == EMPTY) {
+                if (boardState[y][x] == Board.FREE) {
                     return false;
                 }
             }
@@ -119,8 +150,13 @@ public class ComputerAi {
         return true;
     }
 
-    // Нахождение лучшего хода для компьютера
-    public static int findBestMove(char[][] board, boolean isPlayerFirst) {
+    /**
+     * Получение оптимального хода машины на доске
+     * @param boardState текущее состояние доски
+     * @param isPlayerFirst определяет, кто ходит первым в партии, а также определяет символы субъектов игры (машины/игрока)
+     * @return оптимальный ход машины
+     */
+    public static int getBestMovePos(char[][] boardState, boolean isPlayerFirst) {
         char playerSymbol = isPlayerFirst ? Board.CROSS : Board.ZERO;
         char computerSymbol = isPlayerFirst ? Board.ZERO : Board.CROSS;
 
@@ -129,10 +165,10 @@ public class ComputerAi {
 
         for (int y = 0; y < SIZE; y++) {
             for (int x = 0; x < SIZE; x++) {
-                if (board[y][x] == EMPTY) {
-                    board[y][x] = computerSymbol;
-                    int moveVal = minimax(board, 0, false, Integer.MIN_VALUE, Integer.MAX_VALUE, playerSymbol, computerSymbol);
-                    board[y][x] = EMPTY;
+                if (boardState[y][x] == Board.FREE) {
+                    boardState[y][x] = computerSymbol;
+                    int moveVal = minimax(boardState, 0, false, Integer.MIN_VALUE, Integer.MAX_VALUE, playerSymbol, computerSymbol);
+                    boardState[y][x] = Board.FREE;
 
                     if (moveVal > bestVal) {
                         bestMove[0] = y;
